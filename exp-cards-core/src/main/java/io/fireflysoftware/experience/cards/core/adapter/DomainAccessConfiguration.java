@@ -58,12 +58,12 @@ public class DomainAccessConfiguration {
 
     @Bean
     public IdentityPort identityPort(IdentityControllerApi identityControllerApi) {
-        return new SdkIdentityClient(identityControllerApi);
+        return new SdkIdentityClientImpl(identityControllerApi);
     }
 
     @Bean
     public AccessPort accessPort(AccessControllerApi accessControllerApi) {
-        return new SdkAccessClient(accessControllerApi);
+        return new SdkAccessClientImpl(accessControllerApi);
     }
 
     private static ApiClient client(String basePath) {
@@ -72,11 +72,11 @@ public class DomainAccessConfiguration {
         return client;
     }
 
-    public static final class SdkIdentityClient implements IdentityPort {
+    public static final class SdkIdentityClientImpl implements IdentityPort {
 
         private final IdentityControllerApi api;
 
-        public SdkIdentityClient(IdentityControllerApi api) {
+        public SdkIdentityClientImpl(IdentityControllerApi api) {
             this.api = api;
         }
 
@@ -89,11 +89,11 @@ public class DomainAccessConfiguration {
         }
     }
 
-    public static final class SdkAccessClient implements AccessPort {
+    public static final class SdkAccessClientImpl implements AccessPort {
 
         private final AccessControllerApi api;
 
-        public SdkAccessClient(AccessControllerApi api) {
+        public SdkAccessClientImpl(AccessControllerApi api) {
             this.api = api;
         }
 
