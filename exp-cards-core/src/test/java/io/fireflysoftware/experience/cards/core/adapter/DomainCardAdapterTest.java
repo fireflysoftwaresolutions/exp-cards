@@ -53,7 +53,7 @@ class DomainCardAdapterTest {
     void limitsGoThroughTheCardsDomainSdk() {
         UUID cardId = UUID.randomUUID();
         UUID limitId = UUID.randomUUID();
-        DomainCardAdapter adapter = new DomainCardAdapter(cardsApi, cardBackofficeApi, cardLimitsApi);
+        DomainCardAdapterImpl adapter = new DomainCardAdapterImpl(cardsApi, cardBackofficeApi, cardLimitsApi);
         when(cardLimitsApi.updateLimits(eq(cardId), eq(limitId), any(UpdateCardLimitsCommand.class), any()))
                 .thenReturn(Mono.empty());
         when(cardBackofficeApi.getCardLimits(eq(cardId), any())).thenReturn(Flux.just(

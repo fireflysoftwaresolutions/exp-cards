@@ -24,7 +24,7 @@ import reactor.core.publisher.Mono;
  * account, policy, claim, or application.
  * <p>
  * The sandbox adapter allows sample journeys. A deployment sets
- * {@code firefly.experience.access.adapter=domain} so {@link DomainAccessAdapter}
+ * {@code firefly.experience.access.adapter=domain} so {@link DomainAccessAdapterImpl}
  * calls domain-core-security-center. A future process engine can implement this same port.
  */
 public interface AccessPort {
