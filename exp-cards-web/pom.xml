@@ -21,6 +21,14 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.fireflyframework</groupId>
+            <artifactId>fireflyframework-security-adapter-opa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.fireflyframework</groupId>
+            <artifactId>fireflyframework-security-resource-server</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.fireflysoftware</groupId>
             <artifactId>exp-cards-interfaces</artifactId>
         </dependency>

@@ -203,10 +203,9 @@ public class CardReplacementJourneyWorkflow {
                         return Mono.<Void>empty();
                     });
         } else {
-            String activationCode = UUID.randomUUID().toString().substring(0, 8);
-            return cardsApi.activateCard(newCardId, activationCode, UUID.randomUUID().toString())
-                    .doOnNext(r -> log.info("Virtual replacement card activated: cardId={}", newCardId))
-                    .then();
+            return Mono.error(new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                    "Caller-authorized activation with owner-issued possession proof is required"));
         }
     }
 

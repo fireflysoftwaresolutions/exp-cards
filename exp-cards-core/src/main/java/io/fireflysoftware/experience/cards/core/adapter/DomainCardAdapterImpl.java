@@ -74,12 +74,6 @@ public class DomainCardAdapterImpl implements CardOperations {
     }
 
     @Override
-    public Mono<Void> activate(UUID cardId) {
-        String activationCode = cardId.toString().substring(0, 8);
-        return cardsApi.activateCard(cardId, activationCode, UUID.randomUUID().toString()).then();
-    }
-
-    @Override
     public Mono<Void> block(UUID cardId, String reason) {
         return cardsApi.blockCard(cardId, reason, "CUSTOMER", UUID.randomUUID().toString()).then();
     }

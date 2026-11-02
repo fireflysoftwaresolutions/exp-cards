@@ -17,6 +17,15 @@
 
 package io.fireflysoftware.experience.cards.web.controllers;
 
+import io.fireflysoftware.experience.cards.core.activation.CardActivationCallerToken;
+import io.fireflysoftware.experience.cards.interfaces.dtos.CardActivationRequest;
+import io.fireflysoftware.experience.cards.interfaces.dtos.CardActivationResponse;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.web.server.ResponseStatusException;
+import org.fireflyframework.web.idempotency.annotation.DisableIdempotency;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
+
 import io.fireflysoftware.experience.cards.core.limits.CardLimitView;
 import io.fireflysoftware.experience.cards.core.services.CardExperienceService;
 import io.fireflysoftware.experience.cards.interfaces.dtos.CardSummaryResponse;
@@ -38,6 +47,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
@@ -45,13 +55,17 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+@org.springframework.context.annotation.Import(io.fireflysoftware.experience.cards.web.openapi.CardActivationOpenApiConfiguration.class)
 @RestController
 @RequestMapping("/api/v1/cards")
 @RequiredArgsConstructor
 @Tag(name = "Cards", description = "Card experience operations")
+@io.swagger.v3.oas.annotations.security.SecurityScheme(name = "cardBearer",
+        type = io.swagger.v3.oas.annotations.enums.SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT")
 public class CardsController {
 
     private final CardExperienceService cardService;
+    private final io.fireflysoftware.experience.cards.core.activation.CardActivationService activationService;
 
     @PostMapping
     @Operation(summary = "Issue a card", description = "Checks access, then issues the card through the domain port")
@@ -75,18 +89,31 @@ public class CardsController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/{cardId}/activate")
-    @Operation(
-            summary = "Activate a card",
-            description = "Activates a card that is in pending activation status"
-    )
-    @ApiResponse(responseCode = "204", description = "Card activated successfully")
-    @ApiResponse(responseCode = "404", description = "Card not found")
-    public Mono<ResponseEntity<Void>> activateCard(
-            @Parameter(description = "Card identifier")
-            @PathVariable UUID cardId) {
-        return cardService.activateCard(cardId)
-                .then(Mono.just(ResponseEntity.noContent().<Void>build()));
+    @PostMapping(value = "/{cardId}/activate", consumes = "application/json", produces = "application/json")
+    @Operation(summary = "Request card activation", description = "Submits issued possession proof to the card owner; pending and uncertain receipts do not confirm activation")
+    @SecurityRequirement(name = "cardBearer")
+    @DisableIdempotency
+    public Mono<ResponseEntity<CardActivationResponse>> activateCard(
+            @PathVariable UUID cardId,
+            @RequestHeader("X-Idempotency-Key") UUID actionId,
+            @Valid @RequestBody CardActivationRequest request, ServerHttpRequest transport) {
+        var authorization = transport.getHeaders().get(org.springframework.http.HttpHeaders.AUTHORIZATION);
+        if (authorization == null || authorization.size() != 1 || !authorization.getFirst().startsWith("Bearer ")) {
+            return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Original card activation bearer required"));
+        }
+        final CardActivationCallerToken caller;
+        try {
+            caller = new CardActivationCallerToken(authorization.getFirst().substring(7));
+        } catch (IllegalArgumentException invalid) {
+            return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Original card activation bearer required"));
+        }
+        return activationService.activate(cardId, actionId, request.activationProof())
+                .map(receipt -> ResponseEntity.status(switch (receipt.state()) {
+                    case CONFIRMED -> 200;
+                    case RESERVED, UNCERTAIN -> 202;
+                    case REJECTED -> 422;
+                    case RECONCILIATION_REQUIRED -> 409;
+                }).body(receipt)).contextWrite(context -> context.put(CardActivationCallerToken.class, caller));
     }
 
     @PostMapping("/{cardId}/block")

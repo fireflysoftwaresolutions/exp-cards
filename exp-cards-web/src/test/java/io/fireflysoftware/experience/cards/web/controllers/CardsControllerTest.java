@@ -44,6 +44,9 @@ class CardsControllerTest {
     @Mock
     private CardExperienceService cardService;
 
+    @Mock
+    private io.fireflysoftware.experience.cards.core.activation.CardActivationService activationService;
+
     @InjectMocks
     private CardsController controller;
 
@@ -96,17 +99,23 @@ class CardsControllerTest {
     }
 
     @Test
-    void activateCard_returnsNoContent() {
-        UUID cardId = UUID.randomUUID();
-
-        when(cardService.activateCard(cardId))
-                .thenReturn(Mono.empty());
-
-        StepVerifier.create(controller.activateCard(cardId))
-                .assertNext(response -> {
-                    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-                })
-                .verifyComplete();
+    void activateCard_preservesEveryOwnerStateAndOriginalCaller() {
+        UUID cardId = UUID.randomUUID(), actionId = UUID.randomUUID();
+        String proof = "syntheticIssuedPossessionProofForTransportOnly0123456789";
+        for (var state : io.fireflysoftware.experience.cards.interfaces.dtos.CardActivationResponse.State.values()) {
+            var receipt = new io.fireflysoftware.experience.cards.interfaces.dtos.CardActivationResponse(actionId, cardId, state, null);
+            when(activationService.activate(cardId, actionId, proof)).thenReturn(Mono.deferContextual(context -> {
+                assertThat(context.get(io.fireflysoftware.experience.cards.core.activation.CardActivationCallerToken.class).value()).isEqualTo("synthetic.original.token");
+                return Mono.just(receipt);
+            }));
+            int expected = switch(state) {case CONFIRMED -> 200; case RESERVED, UNCERTAIN -> 202; case REJECTED -> 422; case RECONCILIATION_REQUIRED -> 409;};
+            StepVerifier.create(controller.activateCard(cardId, actionId,
+                    new io.fireflysoftware.experience.cards.interfaces.dtos.CardActivationRequest(proof),
+                    org.springframework.mock.http.server.reactive.MockServerHttpRequest.post("/api/v1/cards/" + cardId + "/activate")
+                            .header("Authorization", "Bearer synthetic.original.token").build()))
+                    .assertNext(response -> {assertThat(response.getStatusCode().value()).isEqualTo(expected);assertThat(response.getBody()).isEqualTo(receipt);}).verifyComplete();
+        }
+        org.mockito.Mockito.verifyNoInteractions(cardService);
     }
 
     @Test

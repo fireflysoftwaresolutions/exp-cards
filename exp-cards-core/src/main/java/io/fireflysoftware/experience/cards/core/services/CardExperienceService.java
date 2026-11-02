@@ -33,7 +33,6 @@ public interface CardExperienceService {
 
     Mono<CardSummaryResponse> getCardSummary(UUID cardId);
 
-    Mono<Void> activateCard(UUID cardId);
 
     Mono<Void> blockCard(UUID cardId, String reason);
 

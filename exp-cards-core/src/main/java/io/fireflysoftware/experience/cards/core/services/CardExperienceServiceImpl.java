@@ -61,13 +61,6 @@ public class CardExperienceServiceImpl implements CardExperienceService {
     }
 
     @Override
-    public Mono<Void> activateCard(UUID cardId) {
-        return AccessGuard.require(identityPort, accessPort, IdentityPort.SAMPLE_USERNAME,
-                AccessRequest.of(cardId, AccessAction.UPDATE, "CARD", cardId),
-                () -> cardOperations.activate(cardId));
-    }
-
-    @Override
     public Mono<Void> blockCard(UUID cardId, String reason) {
         return AccessGuard.require(identityPort, accessPort, IdentityPort.SAMPLE_USERNAME,
                 AccessRequest.of(cardId, AccessAction.UPDATE, "CARD", cardId),

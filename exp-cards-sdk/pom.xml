@@ -18,6 +18,16 @@
     </properties>
 
     <dependencies>
+        <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-core</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-postgresql</artifactId><scope>test</scope></dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- Web module for OpenAPI spec -->
         <dependency>
             <groupId>io.fireflysoftware</groupId>
@@ -105,6 +115,9 @@
                             <apiPackage>io.fireflysoftware.experience.cards.sdk.api</apiPackage>
                             <modelPackage>io.fireflysoftware.experience.cards.sdk.model</modelPackage>
                             <invokerPackage>io.fireflysoftware.experience.cards.sdk.invoker</invokerPackage>
+                            <schemaMappings>
+                                <schemaMapping>FireflyInstant=java.time.Instant</schemaMapping>
+                            </schemaMappings>
                             <configOptions>
                                 <java20>true</java20>
                                 <useTags>true</useTags>
