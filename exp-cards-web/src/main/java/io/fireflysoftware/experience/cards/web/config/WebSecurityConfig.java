@@ -37,7 +37,7 @@ public class WebSecurityConfig {
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .logout(ServerHttpSecurity.LogoutSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/api/v1/cards/*/activate").denyAll()
+                        .pathMatchers("/api/v1/cards/*/activate", "/api/v1/cards/*/activation/*").denyAll()
                         .pathMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",

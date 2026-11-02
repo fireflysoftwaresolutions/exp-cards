@@ -87,6 +87,33 @@ public class CardActivationServiceImpl implements CardActivationService {
         });
     }
 
+    @Override
+    public Mono<CardActivationResponse> recover(UUID cardId, UUID actionId) {
+        return Mono.defer(() -> {
+            if (cardId == null || actionId == null || new UUID(0, 0).equals(cardId) || new UUID(0, 0).equals(actionId)) {
+                return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Original card and action are required"));
+            }
+            if (clients.isEmpty()) return Mono.error(recoveryUnavailable());
+            return clients.get().current(cardId, actionId).switchIfEmpty(Mono.error(recoveryUnavailable()))
+                    .flatMap(client -> client.revalidate().then(Mono.defer(() -> client.api()
+                            .recoverCardActivation(cardId, actionId).timeout(client.remaining())))
+                            .switchIfEmpty(Mono.error(invalidReceipt()))
+                            .map(receipt -> checked(cardId, actionId, receipt))
+                            .flatMap(receipt -> client.revalidate().thenReturn(receipt)))
+                    .onErrorMap(java.util.concurrent.TimeoutException.class, failure -> recoveryUnavailable())
+                    .onErrorMap(org.springframework.web.reactive.function.client.WebClientRequestException.class, failure -> recoveryUnavailable())
+                    .onErrorMap(WebClientResponseException.class, failure -> new ResponseStatusException(
+                            failure.getStatusCode(), failure.getStatusCode().value() >= 500
+                                    || failure.getStatusCode().value() == 408 || failure.getStatusCode().value() == 429
+                                    ? "Original activation receipt unavailable; outcome remains unknown"
+                                    : "Original activation receipt is not available to the current caller"));
+        });
+    }
+
+    private static ResponseStatusException recoveryUnavailable() {
+        return new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Original activation receipt unavailable; outcome remains unknown");
+    }
+
     private static CardActivationResponse checked(UUID cardId, UUID actionId, io.fireflysoftware.domain.banking.cards.sdk.model.CardActivationResponse receipt) {
         if (receipt == null || !cardId.equals(receipt.getCardId())
                 || !actionId.equals(receipt.getActionId()) || receipt.getState() == null) {

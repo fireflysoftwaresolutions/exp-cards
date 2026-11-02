@@ -147,4 +147,16 @@ class CardsControllerTest {
                 })
                 .verifyComplete();
     }
+    @Test void originalReceiptRecoveryIsUncachedAndPreservesUncertainState() {
+        UUID card=UUID.randomUUID(),action=UUID.randomUUID();
+        var receipt=new io.fireflysoftware.experience.cards.interfaces.dtos.CardActivationResponse(action,card,io.fireflysoftware.experience.cards.interfaces.dtos.CardActivationResponse.State.UNCERTAIN,null);
+        when(activationService.recover(card,action)).thenReturn(Mono.just(receipt));
+        var request=org.springframework.mock.http.server.reactive.MockServerHttpRequest.get("/api/v1/cards/"+card+"/activation/"+action).header("Authorization","Bearer synthetic.original.token").build();
+        StepVerifier.create(controller.recoverCardActivation(card,action,request)).assertNext(response->{org.junit.jupiter.api.Assertions.assertEquals(200,response.getStatusCode().value());org.junit.jupiter.api.Assertions.assertEquals("no-store",response.getHeaders().getCacheControl());org.junit.jupiter.api.Assertions.assertEquals(receipt,response.getBody());}).verifyComplete();
+        org.mockito.Mockito.verify(activationService).recover(card,action);org.mockito.Mockito.verifyNoInteractions(cardService);
+    }
+    @Test void receiptRecoveryWithoutBearerCannotInvokeTheReadService() {
+        var request=org.springframework.mock.http.server.reactive.MockServerHttpRequest.get("/").build();
+        StepVerifier.create(controller.recoverCardActivation(UUID.randomUUID(),UUID.randomUUID(),request)).expectErrorMatches(error->error instanceof org.springframework.web.server.ResponseStatusException status&&status.getStatusCode().value()==401).verify();org.mockito.Mockito.verifyNoInteractions(activationService,cardService);
+    }
 }
