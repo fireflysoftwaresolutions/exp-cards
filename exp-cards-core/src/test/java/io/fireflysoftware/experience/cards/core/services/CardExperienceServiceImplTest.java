@@ -95,16 +95,6 @@ class CardExperienceServiceImplTest {
     }
 
     @Test
-    void activateCard_callsDomainPort() {
-        UUID cardId = UUID.randomUUID();
-        when(accessPort.check(any())).thenReturn(Mono.just(AccessDecision.grant()));
-        when(cardOperations.activate(cardId)).thenReturn(Mono.empty());
-
-        StepVerifier.create(service.activateCard(cardId)).verifyComplete();
-        verify(cardOperations).activate(cardId);
-    }
-
-    @Test
     void updateLimits_checksAccessThenDomainPort() {
         UUID cardId = UUID.randomUUID();
         UUID limitId = UUID.randomUUID();

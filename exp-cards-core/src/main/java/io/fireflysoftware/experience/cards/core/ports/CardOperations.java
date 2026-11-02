@@ -36,7 +36,6 @@ public interface CardOperations {
 
     Mono<CardSummaryResponse> get(UUID cardId);
 
-    Mono<Void> activate(UUID cardId);
 
     Mono<Void> block(UUID cardId, String reason);
 

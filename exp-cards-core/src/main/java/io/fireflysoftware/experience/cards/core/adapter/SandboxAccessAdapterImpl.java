@@ -27,11 +27,11 @@ import reactor.core.publisher.Mono;
 /**
  * Allows every sample journey so OpenPlatform can run without an external identity provider.
  * Replace it by setting {@code firefly.experience.access.adapter=domain}, which selects
- * {@link DomainAccessAdapter} and calls domain-core-security-center.
+ * {@link DomainAccessAdapterImpl} and calls domain-core-security-center.
  */
-@Component
+@Component("sandboxAccessAdapter")
 @ConditionalOnProperty(name = "firefly.experience.access.adapter", havingValue = "sandbox")
-public class SandboxAccessAdapter implements AccessPort {
+public class SandboxAccessAdapterImpl implements AccessPort {
 
     @Override
     public Mono<AccessDecision> check(AccessRequest request) {

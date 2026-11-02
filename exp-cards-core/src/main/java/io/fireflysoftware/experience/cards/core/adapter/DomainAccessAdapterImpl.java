@@ -27,11 +27,11 @@ import reactor.core.publisher.Mono;
  * Default security-center adapter. Active when {@code firefly.experience.access.adapter=domain}.
  * A future BPM engine replaces this class, not the bureau adapter inside the data domain.
  */
-public class DomainAccessAdapter implements AccessPort {
+public class DomainAccessAdapterImpl implements AccessPort {
 
     private final SecurityCenterClient securityCenterClient;
 
-    public DomainAccessAdapter(SecurityCenterClient securityCenterClient) {
+    public DomainAccessAdapterImpl(SecurityCenterClient securityCenterClient) {
         this.securityCenterClient = securityCenterClient;
     }
 

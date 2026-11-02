@@ -22,25 +22,14 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
-/**
- * Reactive web security configuration for the Experience Cards service.
- * <p>
- * Disables Spring Security's default HTTP Basic Auth (which is auto-activated by the
- * presence of {@code spring-boot-starter-security} brought in transitively by
- * {@code fireflyframework-starter-application}) and exposes Swagger/OpenAPI and
- * Actuator probes as public endpoints.
- * <p>
- * Method-level authorization is delegated to the Firefly Framework's
- * {@code SecurityAspect} (AOP) driven by the {@code @Secure} annotation and the
- * {@code EndpointSecurityRegistry}; therefore the HTTP filter chain itself permits
- * all exchanges and only acts as a gatekeeper to disable the noisy defaults
- * (Basic Auth, form login, CSRF) that do not apply to a stateless REST API.
- */
+/** Unconfigured native trust denies activation; configured deployments use the native resource server chain. */
 @Configuration
 @EnableWebFluxSecurity
 public class WebSecurityConfig {
 
     @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name = "firefly.security.resource-server.enabled", havingValue = "false")
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -48,6 +37,7 @@ public class WebSecurityConfig {
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .logout(ServerHttpSecurity.LogoutSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers("/api/v1/cards/*/activate", "/api/v1/cards/*/activation/*").denyAll()
                         .pathMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",

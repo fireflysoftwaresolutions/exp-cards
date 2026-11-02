@@ -39,10 +39,10 @@ import java.util.UUID;
 /**
  * Calls domain-banking-cards. Replace this class to send the same port through a process engine.
  */
-@Component
+@Component("domainCardAdapter")
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "firefly.experience.cards.ports.card-operations", havingValue = "domain", matchIfMissing = true)
-public class DomainCardAdapter implements CardOperations {
+public class DomainCardAdapterImpl implements CardOperations {
 
     private final CardsApi cardsApi;
     private final CardBackofficeApi cardBackofficeApi;
@@ -71,12 +71,6 @@ public class DomainCardAdapter implements CardOperations {
                         .status(card.getCardStatus() == null ? null : card.getCardStatus().toString())
                         .cardholderName(card.getCardHolderName())
                         .build());
-    }
-
-    @Override
-    public Mono<Void> activate(UUID cardId) {
-        String activationCode = cardId.toString().substring(0, 8);
-        return cardsApi.activateCard(cardId, activationCode, UUID.randomUUID().toString()).then();
     }
 
     @Override

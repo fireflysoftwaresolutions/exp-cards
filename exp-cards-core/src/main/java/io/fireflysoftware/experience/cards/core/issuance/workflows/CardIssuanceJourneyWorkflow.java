@@ -195,10 +195,9 @@ public class CardIssuanceJourneyWorkflow {
 
     @WorkflowStep(id = STEP_ACTIVATE_CARD, dependsOn = STEP_ISSUE_CARD)
     public Mono<Void> activateCard(@Variable(VAR_CARD_ID) UUID cardId) {
-        String activationCode = UUID.randomUUID().toString().substring(0, 8);
-        return cardsApi.activateCard(cardId, activationCode, UUID.randomUUID().toString())
-                .doOnNext(r -> log.info("Card activated: cardId={}", cardId))
-                .then();
+        return Mono.error(new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                "Caller-authorized activation with owner-issued possession proof is required"));
     }
 
     @WorkflowStep(id = STEP_SEND_CONFIRMATION, dependsOn = STEP_ACTIVATE_CARD)
